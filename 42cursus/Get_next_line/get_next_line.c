@@ -11,7 +11,11 @@
 /* ************************************************************************** */
 
 #include "get_next_line.h"
+// #include <unistd.h>
+// #include <stdio.h>
+// #include <fcntl.h>
 
+// ft_write adds buffer content to a temporary var, and frees buffer memory 
 char	*ft_write(char *buffer, char *stash)
 {
 	char	*temp;
@@ -21,16 +25,21 @@ char	*ft_write(char *buffer, char *stash)
 	return (temp);
 }
 
+// readfd allocates memory to 'out', reads from the text file using read
+// function for BUFFERSIZE length, until reaching a '\n', and uses ft_write 
+// to add buffer to 'out.
 char	*readfd(int fd, char *out)
 {
 	char	*buffer;
 	int		nbyte;
 
-	nbyte = 1;
 	if (!out)
 		out = ft_calloc (1, 1);
 	buffer = ft_calloc (BUFFER_SIZE + 1, sizeof(char));
-	while (nbyte > 1)
+	if (!buffer)
+		return (NULL);
+	nbyte = 1;
+	while (nbyte > 0)
 	{
 		nbyte = read(fd, buffer, BUFFER_SIZE);
 		if (nbyte == -1)
@@ -38,7 +47,7 @@ char	*readfd(int fd, char *out)
 			free (buffer);
 			return (NULL);
 		}
-		buffer[nbyte] = 0;
+		buffer[nbyte] = '\0';
 		out = ft_write(out, buffer);
 		if (ft_strchr(buffer, '\n'))
 			break ;
@@ -47,6 +56,8 @@ char	*readfd(int fd, char *out)
 	return (out);
 }
 
+//ft_writeline transfers the line from the buffer to the 'line'.
+//calloc + 2 because of dif from position and length + '\n'. 
 char	*ft_writeline(char *buffer)
 {
 	char	*line;
@@ -64,8 +75,12 @@ char	*ft_writeline(char *buffer)
 		line[i] = buffer[i];
 		i++;
 	}
-	if (buffer[i] && buffer[i] == '\n')
-		line [i++] = '\n';
+	if (buffer[i] == '\n')
+	{
+		line [i] = buffer[i];
+		i++;
+	}
+	line [i] = '\0';
 	return (line);
 }
 
@@ -100,9 +115,29 @@ char	*get_next_line(int fd)
 	if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
 		return (NULL);
 	buffer = readfd(fd, buffer);
+	if 
 	if (!buffer)
 		return (NULL);
 	line = ft_writeline(buffer);
 	buffer = ft_trimline(buffer);
 	return (line);
 }
+
+// int	main(void)
+// {
+// 	char	*line;
+// 	int		i;
+// 	int		fd1;
+
+// 	fd1 = open("tests/test.txt", O_RDONLY);
+// 	i = 1;
+// 	while (i < )
+// 	{
+// 		line = get_next_line(fd1);
+// 		printf("line [%02d]: %s", i, line);
+// 		free(line);
+// 		i++;
+// 	}
+// 	close(fd1);
+// 	return (0);
+// }

@@ -17,7 +17,7 @@
 # include "unistd.h"
 
 # ifndef BUFFER_SIZE
-#  define BUFFER_SIZE = 42
+#  define BUFFER_SIZE 42
 # endif
 
 void	*ft_bzero(void *str, int n);
