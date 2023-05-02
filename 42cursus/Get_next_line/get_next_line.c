@@ -11,133 +11,103 @@
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-// #include <unistd.h>
-// #include <stdio.h>
-// #include <fcntl.h>
 
-// ft_write adds buffer content to a temporary var, and frees buffer memory 
-char	*ft_write(char *buffer, char *stash)
+char	*mem_handler(int res, char *buf, char *s_buf)
 {
-	char	*temp;
-
-	temp = ft_strjoin(buffer, stash);
-	free(buffer);
-	return (temp);
+	if (res == 0)
+	{
+		free(buf);
+		return (s_buf);
+	}
+	else
+	{
+		free(buf);
+		free(s_buf);
+		s_buf = 0;
+		return (s_buf);
+	}
 }
 
-// readfd allocates memory to 'out', reads from the text file using read
-// function for BUFFERSIZE length, until reaching a '\n', and uses ft_write 
-// to add buffer to 'out.
-char	*readfd(int fd, char *out)
+char	*trim_buffer(char *buf)
 {
-	char	*buffer;
-	int		nbyte;
+	char	*str;
 
-	if (!out)
-		out = ft_calloc (1, 1);
-	buffer = ft_calloc (BUFFER_SIZE + 1, sizeof(char));
-	if (!buffer)
-		return (NULL);
-	nbyte = 1;
-	while (nbyte > 0)
+	if (!buf)
+		return (0);
+	if (ft_strchr(buf, '\n') == 0)
+		return (0);
+	if (ft_strlen(ft_strchr(buf, '\n')) - 1 == 0)
 	{
-		nbyte = read(fd, buffer, BUFFER_SIZE);
-		if (nbyte == -1)
-		{
-			free (buffer);
-			return (NULL);
-		}
-		buffer[nbyte] = '\0';
-		out = ft_write(out, buffer);
-		if (ft_strchr(buffer, '\n'))
-			break ;
+		free(buf);
+		return (0);
 	}
-	free(buffer);
-	return (out);
+	str = malloc(sizeof(char) * (ft_strlen(ft_strchr(buf, '\n'))));
+	ft_memcpy(str, buf + ft_strlen(buf)
+		- ft_strlen(ft_strchr (buf, '\n'))
+		+1, ft_strlen(ft_strchr(buf, '\n')) - 1);
+	str[ft_strlen(ft_strchr(buf, '\n')) - 1] = '\0';
+	if (buf)
+		free(buf);
+	return (str);
 }
 
-//ft_writeline transfers the line from the buffer to the 'line'.
-//calloc + 2 because of dif from position and length + '\n'. 
-char	*ft_writeline(char *buffer)
+char	*extract_buffer(char *buf)
 {
-	char	*line;
-	int		i;
+	char	*str;
 
-	i = 0;
-	if (!buffer[i])
-		return (NULL);
-	while (buffer[i] && buffer[i] != '\n')
-		i++;
-	line = ft_calloc(i + 2, sizeof(char));
-	i = 0;
-	while (buffer[i] && buffer[i] != '\n')
-	{
-		line[i] = buffer[i];
-		i++;
-	}
-	if (buffer[i] == '\n')
-	{
-		line [i] = buffer[i];
-		i++;
-	}
-	line [i] = '\0';
-	return (line);
+	if (!buf)
+		return (0);
+	if (ft_strchr(buf, '\n') == 0)
+		return (buf);
+	str = malloc(sizeof(char) * (ft_strlen(buf)
+				- ft_strlen(ft_strchr(buf, '\n')) + 2));
+	ft_memcpy(str, buf, (ft_strlen(buf)
+			- ft_strlen(ft_strchr(buf, '\n')) + 1));
+	str[ft_strlen(buf) - ft_strlen(ft_strchr(buf, '\n')) + 1] = '\0';
+	return (str);
 }
 
-char	*ft_trimline(char	*buffer)
+char	*start_buffer(int fd, char *s_buf)
 {
-	char	*line;
-	int		i;
-	int		j;
+	char	*buf;
+	char	*buf2;
+	int		res;
 
-	i = 0;
-	while (buffer[i] && buffer[i] != '\n')
-		i++;
-	if (!buffer[i])
+	buf = malloc (sizeof(char) * (BUFFER_SIZE + 1));
+	res = read(fd, buf, BUFFER_SIZE);
+	if (res <= 0)
 	{
-		free(buffer);
-		return (NULL);
+		s_buf = mem_handler(res, buf, s_buf);
+		return (s_buf);
 	}
-	line = ft_calloc((ft_strlen(buffer) - i + 1), sizeof(char));
-	i++;
-	j = 0;
-	while (buffer[i])
-		line[j++] = buffer[i++];
-	free(buffer);
-	return (line);
+	buf[res] = '\0';
+	if (!s_buf)
+		s_buf = ft_strdup(buf);
+	else
+	{
+		buf2 = ft_strdup(s_buf);
+		free(s_buf);
+		s_buf = ft_strjoin(buf2, buf);
+		free(buf2);
+	}
+	free(buf);
+	if (!ft_strchr(s_buf, '\n'))
+		s_buf = start_buffer(fd, s_buf);
+	return (s_buf);
 }
 
 char	*get_next_line(int fd)
 {
-	static char		*buffer;
-	char			*line;
+	static char	*buf;
+	char		*str;
 
-	if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
-		return (NULL);
-	buffer = readfd(fd, buffer);
-	if 
-	if (!buffer)
-		return (NULL);
-	line = ft_writeline(buffer);
-	buffer = ft_trimline(buffer);
-	return (line);
+	if (fd < 0)
+		return (0);
+	if (buf == 0 || ft_strchr(buf, '\n') == 0)
+		buf = start_buffer(fd, buf);
+	str = extract_buffer(buf);
+	buf = trim_buffer(buf);
+	if (buf == 0)
+		free(buf);
+	return (str);
 }
-
-// int	main(void)
-// {
-// 	char	*line;
-// 	int		i;
-// 	int		fd1;
-
-// 	fd1 = open("tests/test.txt", O_RDONLY);
-// 	i = 1;
-// 	while (i < )
-// 	{
-// 		line = get_next_line(fd1);
-// 		printf("line [%02d]: %s", i, line);
-// 		free(line);
-// 		i++;
-// 	}
-// 	close(fd1);
-// 	return (0);
-// }
